@@ -14,6 +14,15 @@ class Scrapper:
         self.__url=url
         self.wlog=wlog
 
+    def change_url(self,url):
+        self.__url=url
+
+    def print_data(self):
+        print(self.__data)
+
+    def convert_data_to_bs4(self):
+        self.__soup=BeautifulSoup(self.__data,"html.parser")
+
     def retrieve_webpage(self):
         try:
             html=urlopen(self.__url)
@@ -44,11 +53,22 @@ class Scrapper:
             print(e)
             self.__wlog.report(str(e))
 
-    def change_url(self,url):
-        self.__url=url
-
-    def print_data(self):
-        print(self.__data)
-
-    def convert_data_to_bs4(self):
-        self.__soup=BeautifulSoup(self.__data,"html.parser")
+    def parse_soup_to_html(self):
+        news_list=self.__soup.find_all(['h1','h2'])
+        htmltext='''
+    <html>
+        <head><title>Simple News Link Scrapper</title></head>
+        <body>
+            {NEWS_LINKS}
+        </body>
+    </html>
+    '''
+        news_links='<ol>'
+        for tag in news_list:
+            if tag.parent.get('href'):
+                link=self.__url+tag.parent.get('href')
+                title=tag.string
+                news_links+="<li><a href='{}' target='_blank'>{}</a></li>\n".format(link,title)
+            news_links+='</ol>'
+            htmltext=htmltext.format(NEWS_LINKS=news_links)
+            self.write_webpage_as_html(filepath="simplenews.html",data=htmltext.encode())
